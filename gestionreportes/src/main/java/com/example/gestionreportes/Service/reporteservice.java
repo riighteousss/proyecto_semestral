@@ -2,7 +2,6 @@ package com.example.gestionreportes.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import com.example.gestionreportes.Model.reporte;
 import com.example.gestionreportes.Repository.reporterepository;
@@ -23,16 +22,13 @@ public class reporteservice {
     // Buscar todos los reportes
     public List<reporte> buscarReportes() {
         return reporteRepository.findAll();
+    
     }
 
-    // Buscar reporte por ID
-    public Optional<reporte> buscarPorId(Long id) {
-        return reporteRepository.findById(id);
-    }
-
-    // Buscar reportes por usuario
-    public List<reporte> buscarPorUsuario(Long idUsuario) {
-        return reporteRepository.findByIdusuario(idUsuario);
+    //buscar reporte por id
+    public reporte buscarreporteporid(Long id){
+        return reporteRepository.findById(id)
+        .orElseThrow(()-> new RuntimeException("reporte no encontrado"));
     }
 
     // Crear un nuevo reporte
@@ -52,39 +48,24 @@ public class reporteservice {
 
         return reporteRepository.save(nuevoReporte);
     }
-
-    // Actualizar reporte
-    public reporte actualizarReporte(Long id, String tipoReporte, String descripcionGeneral, Long idUsuario) {
-        Optional<reporte> reporteExistente = reporteRepository.findById(id);
+    //eliminar reporte
+    public String eliminarreporte(Long id){
+        //valida que exista antes de borrar
         
-        if (!reporteExistente.isPresent()) {
-            throw new RuntimeException("Reporte no encontrado con ID: " + id);
+        if(!reporteRepository.existsById(id)){          
+            throw new RuntimeException("El reporte con ID: "+id+" no existe");
         }
-
-        // Validar si el usuario existe
-        if (idUsuario != null) {
-            Map<String, Object> usuario = usuarioClient.obtenerusuarioid(idUsuario);
-            if (usuario == null || usuario.isEmpty()) {
-                throw new RuntimeException("Usuario no encontrado, no se puede actualizar el reporte");
-            }
-        }
-
-        reporte reporte = reporteExistente.get();
-        if (tipoReporte != null) reporte.setTiporeporte(tipoReporte);
-        if (descripcionGeneral != null) reporte.setDescripciongeneral(descripcionGeneral);
-        if (idUsuario != null) reporte.setIdusuario(idUsuario);
-
-        return reporteRepository.save(reporte);
-    }
-
-    // Eliminar reporte
-    public void eliminarReporte(Long id) {
-        Optional<reporte> reporteExistente = reporteRepository.findById(id);
-        
-        if (!reporteExistente.isPresent()) {
-            throw new RuntimeException("Reporte no encontrado con ID: " + id);
-        }
-
         reporteRepository.deleteById(id);
+
+        return "El reporte se ha eliminado exitosamente";
     }
+    //buscar todos los reportes de un usuario por su id 
+     public List<reporte> buscarporidusuario(Long idUsuario) {
+          List<reporte> newreport = reporteRepository.findByIdusuario(idUsuario);
+        if (newreport.isEmpty()) {
+              throw new RuntimeException("No se encontraron equipos para el usuario con ID: " + idUsuario);
+           }
+          return newreport;
+    }
+
 }

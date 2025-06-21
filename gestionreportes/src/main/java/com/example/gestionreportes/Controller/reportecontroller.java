@@ -4,93 +4,84 @@ import com.example.gestionreportes.Model.reporte;
 import com.example.gestionreportes.Service.reporteservice;
 
 import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "*")
 public class reportecontroller {
-    
     @Autowired
-    private reporteservice reporteService;
-
-    // Obtener todos los reportes
+    private reporteservice Reporteservice;
+ //endponit para consultar todos los reportes
     @GetMapping("/reportes")
-    public ResponseEntity<List<reporte>> obtenerReportes() {
-        List<reporte> reportes = reporteService.buscarReportes();
-        return reportes.isEmpty() ? 
-            ResponseEntity.noContent().build() : 
-            ResponseEntity.ok(reportes);
+    public ResponseEntity<List<reporte>> buscarreporte(){
+        List<reporte> reporte = Reporteservice.buscarReportes();
+        //si la lista esta vacia
+        if(reporte.isEmpty()){
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(reporte);
     }
-
-    // Obtener reporte por ID
-    @GetMapping("/reportes/{id}")
-    public ResponseEntity<?> obtenerReportePorId(@PathVariable Long id) {
-        try {
-            Optional<reporte> reporte = reporteService.buscarPorId(id);
-            return reporte.isPresent() ? 
-                ResponseEntity.ok(reporte.get()) : 
-                ResponseEntity.notFound().build();
+   //endpoint para buscar reporte por id
+   @GetMapping("/reportes/{id}")
+   public ResponseEntity<reporte> buscarporid(@PathVariable Long id){
+         try {
+            reporte reportes = Reporteservice.buscarreporteporid(id);
+            return ResponseEntity.ok(reportes);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.notFound().build();
         }
-    }
 
-    // Obtener reportes por usuario - NUEVA FUNCIONALIDAD
-    @GetMapping("/reportes/usuario/{usuarioId}")
-    public ResponseEntity<List<reporte>> obtenerReportesPorUsuario(@PathVariable Long usuarioId) {
-        List<reporte> reportes = reporteService.buscarPorUsuario(usuarioId);
-        return reportes.isEmpty() ? 
-            ResponseEntity.noContent().build() : 
-            ResponseEntity.ok(reportes);
-    }
-
-    // Crear nuevo reporte
+   } 
+    //endpoint para crea nuevo reporte
     @PostMapping("/reportes")
-    public ResponseEntity<?> crearReporte(@RequestBody reporte reporte) {
-        try {
-            reporte nuevoReporte = reporteService.crearReporte(
-                reporte.getTiporeporte(),
-                reporte.getDescripciongeneral(),
-                reporte.getIdusuario()
-            );
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoReporte);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    public ResponseEntity<?> crearreporte(@RequestBody reporte reporte){
+    try {
+        reporte newreporte = Reporteservice.crearReporte(
+            reporte.getTiporeporte(),
+            reporte.getDescripciongeneral(),
+            reporte.getIdusuario()
+            
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(newreporte);
+    }   catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
-
-    // Actualizar reporte completo
-    @PutMapping("/reportes/{id}")
-    public ResponseEntity<?> actualizarReporte(
-            @PathVariable Long id,
-            @RequestBody reporte reporteData) {
-        try {
-            reporte reporteActualizado = reporteService.actualizarReporte(
-                id,
-                reporteData.getTiporeporte(),
-                reporteData.getDescripciongeneral(),
-                reporteData.getIdusuario()
-            );
-            return ResponseEntity.ok(reporteActualizado);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
     }
-
-    // Eliminar reporte
+    //endpoint para eliminar reporte
     @DeleteMapping("/reportes/{id}")
-    public ResponseEntity<?> eliminarReporte(@PathVariable Long id) {
-        try {
-            reporteService.eliminarReporte(id);
-            return ResponseEntity.ok().body("Reporte eliminado correctamente");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    public ResponseEntity<?> eliminarreporte(@PathVariable Long id){
+        try{
+           String mensaje = Reporteservice.eliminarreporte(id);
+          return ResponseEntity.ok(mensaje);
+        }catch(RuntimeException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
         }
+
     }
+    //endpoint para buscar todos los reportes de un usuario
+    @GetMapping("/reportes/{id}")
+     public ResponseEntity<?> buscarporidusuario(@PathVariable Long id){
+        try {
+         List<reporte> reporte = Reporteservice.buscarporidusuario(id);
+
+        return ResponseEntity.ok(reporte);
+        } catch (RuntimeException e) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+
+    }
+
 }
