@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -22,6 +23,9 @@ public class HistorialReparacion {
     private String accion;
     private Date fechaRegistro = new Date();
     private String usuario;
+    
+    // Nuevo campo para el técnico asignado
+    private Long tecnicoId;
     
     @PrePersist
     protected void onCreate() {

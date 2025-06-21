@@ -2,6 +2,7 @@ package com.example.gestionreportes.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.example.gestionreportes.Model.reporte;
 import com.example.gestionreportes.Repository.reporterepository;
@@ -24,6 +25,16 @@ public class reporteservice {
         return reporteRepository.findAll();
     }
 
+    // Buscar reporte por ID
+    public Optional<reporte> buscarPorId(Long id) {
+        return reporteRepository.findById(id);
+    }
+
+    // Buscar reportes por usuario
+    public List<reporte> buscarPorUsuario(Long idUsuario) {
+        return reporteRepository.findByIdusuario(idUsuario);
+    }
+
     // Crear un nuevo reporte
     public reporte crearReporte(String tipoReporte, String descripcionGeneral, Long idUsuario) {
         // Validar si el usuario existe antes de crear el reporte
@@ -42,4 +53,38 @@ public class reporteservice {
         return reporteRepository.save(nuevoReporte);
     }
 
+    // Actualizar reporte
+    public reporte actualizarReporte(Long id, String tipoReporte, String descripcionGeneral, Long idUsuario) {
+        Optional<reporte> reporteExistente = reporteRepository.findById(id);
+        
+        if (!reporteExistente.isPresent()) {
+            throw new RuntimeException("Reporte no encontrado con ID: " + id);
+        }
+
+        // Validar si el usuario existe
+        if (idUsuario != null) {
+            Map<String, Object> usuario = usuarioClient.obtenerusuarioid(idUsuario);
+            if (usuario == null || usuario.isEmpty()) {
+                throw new RuntimeException("Usuario no encontrado, no se puede actualizar el reporte");
+            }
+        }
+
+        reporte reporte = reporteExistente.get();
+        if (tipoReporte != null) reporte.setTiporeporte(tipoReporte);
+        if (descripcionGeneral != null) reporte.setDescripciongeneral(descripcionGeneral);
+        if (idUsuario != null) reporte.setIdusuario(idUsuario);
+
+        return reporteRepository.save(reporte);
+    }
+
+    // Eliminar reporte
+    public void eliminarReporte(Long id) {
+        Optional<reporte> reporteExistente = reporteRepository.findById(id);
+        
+        if (!reporteExistente.isPresent()) {
+            throw new RuntimeException("Reporte no encontrado con ID: " + id);
+        }
+
+        reporteRepository.deleteById(id);
+    }
 }
