@@ -18,10 +18,29 @@ import lombok.NoArgsConstructor;
 public class inventario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    @Column(nullable = true, unique = false)
+    private Long id;
+    
+    @Column(nullable = false)
     private String nombre;
-    @Column(nullable = true, unique = false)
+    
+    @Column(nullable = true)
     private String descripcion;
-
+    
+    @Column(nullable = false)
+    private Integer stock = 0;
+    
+    @Column(nullable = true)
+    private Integer stockMinimo = 0;
+    
+    @Column(nullable = true)
+    private String categoria;
+    
+    @Column(nullable = true)
+    private String unidadMedida; // unidad, pieza, kg, etc.
+    
+    @Column(nullable = true)
+    private Double precio;
+    
+    @Column(nullable = false)
+    private Boolean activo = true;
 }
