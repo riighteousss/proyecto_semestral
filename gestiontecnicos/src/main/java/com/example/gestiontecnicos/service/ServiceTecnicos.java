@@ -1,7 +1,6 @@
 package com.example.gestiontecnicos.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,105 +14,39 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class ServiceTecnicos {
     @Autowired
-    private RepositoryTecnicos repositoryTecnicos;
+    private RepositoryTecnicos RepositoryTecnicos;
 
-    // Método para buscar todos los técnicos
-    public List<tecnicos> buscarTecnicos(){
-        return repositoryTecnicos.findAll();
+    //metodo para buscar todos los tecnicos
+    public List<tecnicos> BuscarTecnicos(){
+        return RepositoryTecnicos.findAll();
     }
-
-    // Método para buscar técnico por ID
-    public Optional<tecnicos> buscarPorId(Long id) {
-        return repositoryTecnicos.findById(id);
+    //buscar tecnico por su id
+    public tecnicos buscarporid(Long id){
+        return RepositoryTecnicos.findById(id)
+        .orElseThrow(() -> new RuntimeException("el tecnico de ID:"+id+" no existe"));
     }
-
-    // Método para buscar técnico por RUT
-    public Optional<tecnicos> buscarPorRut(String rut) {
-        return repositoryTecnicos.findByRut(rut);
-    }
-
-    // Agregar o crear un nuevo técnico
-    public tecnicos agregarTecnico(String rut, String nombre, String especialidad){
-        // Verificar si el técnico ya existe usando el método más eficiente
-        if (repositoryTecnicos.existsByRut(rut)) {
+    //agregar-crear un nuevo tecnico
+    public tecnicos AgregarTecnico( String rut, String nombre, String especialidad){
+       
+       // Verificar si el técnico ya existe
+        RepositoryTecnicos.findByRut(rut).ifPresent(t -> {
             throw new RuntimeException("El técnico con RUT " + rut + " ya existe.");
-        }
+        });
         
-        tecnicos tec = new tecnicos();
+        tecnicos tec= new tecnicos();
         tec.setRut(rut);
         tec.setNombre(nombre);
         tec.setEspecialidad(especialidad);
-        return repositoryTecnicos.save(tec);
+        return RepositoryTecnicos.save(tec);
     }
-
-    // Modificar técnico existente
-    public tecnicos modificarTecnico(Long id, String rut, String nombre, String especialidad) {
-        Optional<tecnicos> tecnicoExistente = repositoryTecnicos.findById(id);
+    //actualizar especialidad de un tecnico
+    public tecnicos actualizarEspecializacion(Long id, String especializacion){
+        tecnicos tecnicoExistente = RepositoryTecnicos.findById(id)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
         
-        if (!tecnicoExistente.isPresent()) {
-            throw new RuntimeException("Técnico con ID " + id + " no encontrado.");
-        }
+        tecnicoExistente.setEspecialidad(especializacion);
 
-        tecnicos tecnico = tecnicoExistente.get();
-        
-        // Verificar si el nuevo RUT ya existe en otro técnico
-        if (!tecnico.getRut().equals(rut)) {
-            if (repositoryTecnicos.existsByRutAndIdNot(rut, id)) {
-                throw new RuntimeException("El RUT " + rut + " ya está asignado a otro técnico.");
-            }
-        }
+        return RepositoryTecnicos.save(tecnicoExistente);
 
-        tecnico.setRut(rut);
-        tecnico.setNombre(nombre);
-        tecnico.setEspecialidad(especialidad);
-        
-        return repositoryTecnicos.save(tecnico);
-    }
-
-    // Eliminar técnico
-    public void eliminarTecnico(Long id) {
-        Optional<tecnicos> tecnicoExistente = repositoryTecnicos.findById(id);
-        
-        if (!tecnicoExistente.isPresent()) {
-            throw new RuntimeException("Técnico con ID " + id + " no encontrado.");
-        }
-
-        repositoryTecnicos.deleteById(id);
-    }
-
-    // Actualizar solo la especialidad de un técnico
-    public tecnicos actualizarEspecialidad(Long id, String especialidad) {
-        Optional<tecnicos> tecnicoExistente = repositoryTecnicos.findById(id);
-        
-        if (!tecnicoExistente.isPresent()) {
-            throw new RuntimeException("Técnico con ID " + id + " no encontrado.");
-        }
-
-        tecnicos tecnico = tecnicoExistente.get();
-        tecnico.setEspecialidad(especialidad);
-        
-        return repositoryTecnicos.save(tecnico);
-    }
-
-    // Métodos de búsqueda adicionales usando el repository
-
-    // Buscar técnicos por especialidad
-    public List<tecnicos> buscarPorEspecialidad(String especialidad) {
-        return repositoryTecnicos.findByEspecialidadOrderByNombre(especialidad);
-    }
-
-    // Buscar técnicos por nombre (búsqueda parcial)
-    public List<tecnicos> buscarPorNombre(String nombre) {
-        return repositoryTecnicos.findByNombreContainingIgnoreCase(nombre);
-    }
-
-    // Obtener todas las especialidades disponibles
-    public List<String> obtenerEspecialidades() {
-        return repositoryTecnicos.findDistinctEspecialidades();
-    }
-
-    // Contar técnicos por especialidad
-    public long contarPorEspecialidad(String especialidad) {
-        return repositoryTecnicos.countByEspecialidad(especialidad);
-    }
+    }    
 }
