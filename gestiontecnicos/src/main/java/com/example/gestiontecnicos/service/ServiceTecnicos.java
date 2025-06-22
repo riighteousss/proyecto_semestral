@@ -42,7 +42,7 @@ public class ServiceTecnicos {
     //actualizar especialidad de un tecnico
     public tecnicos actualizarEspecializacion(Long id, String especializacion){
         tecnicos tecnicoExistente = RepositoryTecnicos.findById(id)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+            .orElseThrow(() -> new RuntimeException("tecnico de ID: " + id+" no encontrado "));
         
         tecnicoExistente.setEspecialidad(especializacion);
 
