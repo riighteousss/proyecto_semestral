@@ -59,6 +59,23 @@ public String eliminarsolicitudporid(Long id){
 
       return "La solicitud de ID:"+id+" se ah eliminado exitosamente";
 }
+//metodo para actualizar una solicitud especifica de un usuario 
+public solicitud actualizarporusuario(Long idsolicitud, Long idusuario, String nuevoTipoSolicitud, String nuevaDescripcionGeneral) {
+    
+    // valida si la solicitud existe
+    solicitud solicitudExistente = Solicitudrepository.findById(idsolicitud)
+        .orElseThrow(() -> new RuntimeException("Solicitud con ID: " + idsolicitud + " no encontrada"));
 
+    // Validar que la solicitud le pertenezca al usuario
+    if (!solicitudExistente.getIdusuario().equals(idusuario)) {
+        throw new RuntimeException("La solicitud no pertenece al usuario con ID: " + idusuario);
+    }
+
+    // Actualiza los datos que se  quieran cambiar
+    solicitudExistente.setTiposolicitud(nuevoTipoSolicitud);
+    solicitudExistente.setDescripciongeneral(nuevaDescripcionGeneral);
+
+    return Solicitudrepository.save(solicitudExistente);
+}
 
 }
