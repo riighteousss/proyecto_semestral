@@ -1,6 +1,7 @@
 package com.example.gestionsolicitudes.model;
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,20 +18,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 @Data
+@Schema(description = "solicitud")
 public class solicitud {
+    @Schema(description = "ID autoincrementable")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    @Schema(description = "fecha solicitud, se rellena automaticamente con la fecha actual")
     @Column()
     private Date fechasolicitud; 
     //tipo de solicitudes como mantenimiento, limpieza, formateo etc.
+    @Schema(description = "tipo de solicitudes como mantenimiento, limpieza, formateo etc.")
     @Column()
     private String tiposolicitud;
+    @Schema(description = "descripcion general de la problematica")
     @Column()
     private String descripciongeneral;
-    
-    @Column
+    @Schema(description = "llave foranea de id usuario")
+    @Column()
     private Long idusuario;
+    @Schema(description = "llave foranea del equipo a reparar/revisar")
+    @Column()
+    private Long idequipo;
 
    
     

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.gestionsolicitudes.model.solicitud;
 import com.example.gestionsolicitudes.repository.solicitudrepository;
+import com.example.gestionsolicitudes.webclient.equipoclient;
 import com.example.gestionsolicitudes.webclient.usuarioclient;
 
 @Service
@@ -16,6 +17,8 @@ public class solicitudservice {
 private solicitudrepository Solicitudrepository;
  @Autowired
     private usuarioclient usuarioClient;
+ @Autowired
+    private equipoclient equipoClient;
 
 //metodo para buscar todas las solicitudes
 public List<solicitud> buscarsolicitudes(){
@@ -36,17 +39,28 @@ public List<solicitud>buscarporidusuario(Long idusuario){
   
 }
 //metodo para crear una nueva solicitud
-public solicitud crearsolicitud(String tiposolicitud, String descripciongeneral, long idusuario){
+public solicitud crearsolicitud(String tiposolicitud, String descripciongeneral, long idusuario,Long idequipo){
      // Validar si el usuario existe antes de crear el reporte
         Map<String, Object> usuario = usuarioClient.obtenerusuarioid(idusuario);
 
         if (usuario == null || usuario.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado, no se puede agregar la solicitud");
         }
+
+
+     //valida si existe el equipo resgistrado
+
+      Map<String, Object> equipo = equipoClient.obtenerequipoid(idequipo);
+
+
+        if (equipo == null || equipo.isEmpty()) {
+            throw new RuntimeException("equipo no encontrado, no se puede agregar la solicitud");
+        }
     solicitud solicitud = new solicitud();
     solicitud.setTiposolicitud(tiposolicitud);
     solicitud.setDescripciongeneral(descripciongeneral);
     solicitud.setIdusuario(idusuario);
+    solicitud.setIdequipo(idequipo);
 
     return Solicitudrepository.save(solicitud);
 }
@@ -76,6 +90,16 @@ public solicitud actualizarporusuario(Long idsolicitud, Long idusuario, String n
     solicitudExistente.setDescripciongeneral(nuevaDescripcionGeneral);
 
     return Solicitudrepository.save(solicitudExistente);
+}
+//metodo para eliminar una solicitud
+public String eliminarporid(Long id){
+    if(!Solicitudrepository.existsById(id)){
+        throw new RuntimeException("la solicitud de ID: "+id+" No existe");
+    }
+    Solicitudrepository.deleteById(id);
+
+    return "la solicitud de ID:"+id+" se ah eliminado exitosamente";
+
 }
 
 }
