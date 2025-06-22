@@ -73,5 +73,5 @@ public class EquipoService {
 
         return "el equipo de id:" + id + " se ha eliminado correctamente";
     }
-
+  
 }
