@@ -14,8 +14,16 @@ import com.example.usuarios.model.usuario;
 import com.example.usuarios.service.RoleService;
 import com.example.usuarios.service.UsuarioService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.servlet.http.HttpServletRequest;
 
+@Tag(name = "usuarios", description = "Operaciones relacionadas con la gestión de usuarios, autenticación y roles")
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = "*") // Configurar según tus necesidades
@@ -26,6 +34,14 @@ public class UsuarioController {
     private RoleService roleService;
 
     // ===== ENDPOINT PARA LOGIN CON TOKEN =====
+    @Operation(summary = "Iniciar sesión", description = "Autentica un usuario y devuelve un token JWT")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Autenticación exitosa",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Datos de login inválidos"),
+        @ApiResponse(responseCode = "401", description = "Credenciales incorrectas"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PostMapping("/auth/login")
     public ResponseEntity<?> iniciarSesion(@RequestBody InicioSesion loginRequest) {
         try {
@@ -51,6 +67,11 @@ public class UsuarioController {
     }
 
     // ===== ENDPOINT PARA CAMBIAR CONTRASEÑA =====
+    @Operation(summary = "Cambiar contraseña", description = "Permite a un usuario cambiar su contraseña actual")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Contraseña cambiada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados o contraseña actual incorrecta")
+    })
     @PostMapping("/auth/change-password")
     public ResponseEntity<?> cambiarContrasena(@RequestBody CambioContrasena cambioContrasena) {
         try {
@@ -64,6 +85,10 @@ public class UsuarioController {
     }
 
     // ===== ENDPOINT PARA LOGOUT (OPCIONAL) =====
+    @Operation(summary = "Cerrar sesión", description = "Cierra la sesión del usuario (en JWT stateless se maneja en el frontend)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Sesión cerrada exitosamente")
+    })
     @PostMapping("/auth/logout")
     public ResponseEntity<?> cerrarSesion(HttpServletRequest request) {
         // En JWT stateless, el logout se maneja en el frontend eliminando el token
@@ -72,6 +97,12 @@ public class UsuarioController {
     }
 
     //endpoint para consultar todos los usuarios
+    @Operation(summary = "Obtener todos los usuarios", description = "Devuelve una lista con todos los usuarios registrados")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida correctamente",
+            content = @Content(schema = @Schema(implementation = usuario.class))),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/users")
     public ResponseEntity<?> obtenerUsuarios(){
         try {
@@ -87,6 +118,13 @@ public class UsuarioController {
     }
 
     //endpoint para obtener un usuario por su id
+    @Operation(summary = "Buscar usuario por ID", description = "Devuelve los datos del usuario solicitado")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente",
+            content = @Content(schema = @Schema(implementation = usuario.class))),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/users/{id}")
     public ResponseEntity<?> obtenerusuario(@PathVariable Long id){
         try {
@@ -102,6 +140,12 @@ public class UsuarioController {
     }
 
     //endpoint para consultar todos los roles
+    @Operation(summary = "Obtener todos los roles", description = "Devuelve una lista con todos los roles disponibles")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de roles obtenida correctamente",
+            content = @Content(schema = @Schema(implementation = Rol.class))),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/roles")
     public ResponseEntity<?> obtenerRoles(){
         try {
@@ -117,6 +161,13 @@ public class UsuarioController {
     }
 
     //endpoint para crear un nuevo usuario
+    @Operation(summary = "Crear nuevo usuario", description = "Permite registrar un nuevo usuario en el sistema")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Usuario creado correctamente",
+            content = @Content(schema = @Schema(implementation = usuario.class))),
+        @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados o usuario ya existe"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PostMapping("/users")
     public ResponseEntity<?> crearUsuario(@RequestBody usuario user){
         try {
@@ -145,6 +196,12 @@ public class UsuarioController {
     }
 
     //endpoint para eliminar usuario por su id
+    @Operation(summary = "Eliminar usuario", description = "Elimina un usuario del sistema por su ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Usuario eliminado correctamente"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> eliminarusuario(@PathVariable Long id){
         try {
@@ -160,6 +217,13 @@ public class UsuarioController {
     }
 
     //endpoint para actualizar datos de usuario
+    @Operation(summary = "Actualizar usuario", description = "Permite actualizar los datos de un usuario existente")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente",
+            content = @Content(schema = @Schema(implementation = usuario.class))),
+        @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PutMapping("/users/{id}")
     public ResponseEntity<?> actualizarUsuario(@PathVariable Long id, @RequestBody usuario datosnuevos) {
         try {
@@ -175,9 +239,13 @@ public class UsuarioController {
     }
 
     // Clases para respuestas estandarizadas
+    @Schema(description = "Respuesta de error estandarizada")
     public static class ErrorResponse {
+        @Schema(description = "Tipo de error", example = "Error de autenticación")
         private String error;
+        @Schema(description = "Mensaje descriptivo del error", example = "Credenciales incorrectas")
         private String mensaje;
+        @Schema(description = "Timestamp del error", example = "1640995200000")
         private long timestamp;
 
         public ErrorResponse(String error, String mensaje) {
@@ -192,9 +260,13 @@ public class UsuarioController {
         public long getTimestamp() { return timestamp; }
     }
 
+    @Schema(description = "Respuesta de éxito estandarizada")
     public static class SuccessResponse {
+        @Schema(description = "Mensaje de éxito", example = "Operación completada exitosamente")
         private String mensaje;
+        @Schema(description = "Datos adicionales (opcional)")
         private Object data;
+        @Schema(description = "Timestamp de la respuesta", example = "1640995200000")
         private long timestamp;
 
         public SuccessResponse(String mensaje) {

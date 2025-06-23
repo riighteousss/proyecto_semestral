@@ -1,9 +1,9 @@
 package com.example.usuarios.model;
 
-
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -22,23 +22,21 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-
+@Schema(description = "Rol de usuario - Define los permisos y accesos del usuario en el sistema")
 public class Rol {
+    @Schema(description = "ID autoincrementable del rol")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) //auto incrementable
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @Column(nullable = false, unique = true) // obligatorio y unico
-    private String nombre;
     
+    @Schema(description = "Nombre del rol", required = true, example = "ADMIN, TECNICO, USUARIO")
+    @Column(nullable = false, unique = true)
+    private String nombre;
     
     //identifico la relacion inversa: un rol puede tener muchos usuarios    
     @OneToMany(mappedBy = "rol", cascade = CascadeType.ALL)
     @JsonIgnore // no se incluyan los datos asociados a los roles
+    @Schema(hidden = true) // Ocultar en la documentación de Swagger
     List<usuario> users;
-
-
-
-
-
 }
 
