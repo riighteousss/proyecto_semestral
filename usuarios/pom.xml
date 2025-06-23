@@ -92,6 +92,12 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- Spring HATEOAS -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-hateoas</artifactId>
+        </dependency>
+
         <!-- ===== TEST DEPENDENCIES ===== -->
         <!-- Spring Boot Test -->
         <dependency>
@@ -155,7 +161,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
+                            <version>1.18.30</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

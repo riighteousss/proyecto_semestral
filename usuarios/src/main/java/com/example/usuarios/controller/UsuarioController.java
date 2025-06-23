@@ -1,7 +1,15 @@
 package com.example.usuarios.controller;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,11 +32,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
 @Tag(name = "usuarios", description = "Operaciones relacionadas con la gestión de usuarios, autenticación y roles")
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = "*")
 public class UsuarioController {
+    
     @Autowired
     private UsuarioService usuarioService;
     @Autowired
@@ -56,7 +67,12 @@ public class UsuarioController {
                 loginRequest.getPassword()
             );
             
-            return ResponseEntity.ok(authResponse);
+            EntityModel<AuthResponse> authModel = EntityModel.of(authResponse);
+            authModel.add(linkTo(methodOn(UsuarioController.class).cambiarContrasena(null)).withRel("change-password"));
+            authModel.add(linkTo(methodOn(UsuarioController.class).cerrarSesion(null)).withRel("logout"));
+            authModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withRel("users"));
+            
+            return ResponseEntity.ok(authModel);
             
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -76,26 +92,35 @@ public class UsuarioController {
     public ResponseEntity<?> cambiarContrasena(@RequestBody CambioContrasena cambioContrasena) {
         try {
             String mensaje = usuarioService.cambiarContrasena(cambioContrasena);
-            return ResponseEntity.ok(new SuccessResponse(mensaje));
+            
+            SuccessResponse response = new SuccessResponse(mensaje);
+            EntityModel<SuccessResponse> responseModel = EntityModel.of(response);
+            responseModel.add(linkTo(methodOn(UsuarioController.class).iniciarSesion(null)).withRel("login"));
+            responseModel.add(linkTo(methodOn(UsuarioController.class).cerrarSesion(null)).withRel("logout"));
+            
+            return ResponseEntity.ok(responseModel);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Error al cambiar contraseña", e.getMessage()));
         }
     }
 
-    @Operation(summary = "Cerrar sesión", description = "Cierra la sesión del usuario (en JWT stateless se maneja en el frontend)")
+    @Operation(summary = "Cerrar sesión", description = "Cierra la sesión del usuario")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Sesión cerrada exitosamente")
     })
     @PostMapping("/auth/logout")
     public ResponseEntity<?> cerrarSesion(HttpServletRequest request) {
-        return ResponseEntity.ok(new SuccessResponse("Sesión cerrada exitosamente"));
+        SuccessResponse response = new SuccessResponse("Sesión cerrada exitosamente");
+        EntityModel<SuccessResponse> responseModel = EntityModel.of(response);
+        responseModel.add(linkTo(methodOn(UsuarioController.class).iniciarSesion(null)).withRel("login"));
+        
+        return ResponseEntity.ok(responseModel);
     }
 
     @Operation(summary = "Obtener todos los usuarios", description = "Devuelve una lista con todos los usuarios registrados")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida correctamente",
-            content = @Content(schema = @Schema(implementation = usuario.class))),
+        @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida correctamente"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/users")
@@ -108,10 +133,38 @@ public class UsuarioController {
             }
 
             List<usuario> users = usuarioService.buscarUsuarios();
+            
             if(users.isEmpty()){
-                return ResponseEntity.ok(new SuccessResponse("No hay usuarios registrados", users));
+                // Crear un mapa para la respuesta
+                Map<String, Object> response = new HashMap<>();
+                response.put("mensaje", "No hay usuarios registrados");
+                response.put("data", Collections.emptyList());
+                
+                // Crear el modelo HATEOAS
+                EntityModel<Map<String, Object>> model = EntityModel.of(response);
+                model.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withSelfRel());
+                model.add(linkTo(methodOn(UsuarioController.class).crearUsuario(null, null)).withRel("create-user"));
+                model.add(linkTo(methodOn(UsuarioController.class).obtenerRoles(null)).withRel("roles"));
+                
+                return ResponseEntity.ok(model);
             }
-            return ResponseEntity.ok(users);
+
+            List<EntityModel<usuario>> userModels = users.stream()
+                .map(user -> {
+                    EntityModel<usuario> userModel = EntityModel.of(user);
+                    userModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuario(user.getId(), null)).withSelfRel());
+                    userModel.add(linkTo(methodOn(UsuarioController.class).actualizarUsuario(user.getId(), null, null)).withRel("update"));
+                    userModel.add(linkTo(methodOn(UsuarioController.class).eliminarUsuario(user.getId(), null)).withRel("delete"));
+                    return userModel;
+                })
+                .collect(Collectors.toList());
+
+            CollectionModel<EntityModel<usuario>> collectionModel = CollectionModel.of(userModels);
+            collectionModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withSelfRel());
+            collectionModel.add(linkTo(methodOn(UsuarioController.class).crearUsuario(null, null)).withRel("create-user"));
+            collectionModel.add(linkTo(methodOn(UsuarioController.class).obtenerRoles(null)).withRel("roles"));
+
+            return ResponseEntity.ok(collectionModel);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Error al obtener usuarios", e.getMessage()));
@@ -120,13 +173,12 @@ public class UsuarioController {
 
     @Operation(summary = "Buscar usuario por ID", description = "Devuelve los datos del usuario solicitado")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente",
-            content = @Content(schema = @Schema(implementation = usuario.class))),
+        @ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente"),
         @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/users/{id}")
-    public ResponseEntity<?> obtenerusuario(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<?> obtenerUsuario(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
             if (token == null || !jwtUtil.esTokenValido(token)) {
@@ -135,7 +187,14 @@ public class UsuarioController {
             }
 
             usuario usuario = usuarioService.getUsuario(id);
-            return ResponseEntity.ok(usuario);
+            
+            EntityModel<usuario> userModel = EntityModel.of(usuario);
+            userModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuario(id, null)).withSelfRel());
+            userModel.add(linkTo(methodOn(UsuarioController.class).actualizarUsuario(id, null, null)).withRel("update"));
+            userModel.add(linkTo(methodOn(UsuarioController.class).eliminarUsuario(id, null)).withRel("delete"));
+            userModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withRel("all-users"));
+            
+            return ResponseEntity.ok(userModel);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ErrorResponse("Usuario no encontrado", e.getMessage()));
@@ -147,8 +206,7 @@ public class UsuarioController {
 
     @Operation(summary = "Obtener todos los roles", description = "Devuelve una lista con todos los roles disponibles")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de roles obtenida correctamente",
-            content = @Content(schema = @Schema(implementation = Rol.class))),
+        @ApiResponse(responseCode = "200", description = "Lista de roles obtenida correctamente"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/roles")
@@ -161,10 +219,28 @@ public class UsuarioController {
             }
 
             List<Rol> roles = roleService.buscarRoles();
+            
             if(roles.isEmpty()){
-                return ResponseEntity.ok(new SuccessResponse("No hay roles registrados", roles));
+                SuccessResponse response = new SuccessResponse("No hay roles registrados", roles);
+                EntityModel<SuccessResponse> responseModel = EntityModel.of(response);
+                responseModel.add(linkTo(methodOn(UsuarioController.class).obtenerRoles(null)).withSelfRel());
+                responseModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withRel("users"));
+                return ResponseEntity.ok(responseModel);
             }
-            return ResponseEntity.ok(roles);
+
+            List<EntityModel<Rol>> roleModels = roles.stream()
+                .map(rol -> {
+                    EntityModel<Rol> roleModel = EntityModel.of(rol);
+                    roleModel.add(linkTo(methodOn(UsuarioController.class).obtenerRoles(null)).withRel("all-roles"));
+                    return roleModel;
+                })
+                .collect(Collectors.toList());
+
+            CollectionModel<EntityModel<Rol>> collectionModel = CollectionModel.of(roleModels);
+            collectionModel.add(linkTo(methodOn(UsuarioController.class).obtenerRoles(null)).withSelfRel());
+            collectionModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withRel("users"));
+
+            return ResponseEntity.ok(collectionModel);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Error al obtener roles", e.getMessage()));
@@ -173,9 +249,8 @@ public class UsuarioController {
 
     @Operation(summary = "Crear nuevo usuario", description = "Permite registrar un nuevo usuario en el sistema")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Usuario creado correctamente",
-            content = @Content(schema = @Schema(implementation = usuario.class))),
-        @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados o usuario ya existe"),
+        @ApiResponse(responseCode = "201", description = "Usuario creado correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @PostMapping("/users")
@@ -198,14 +273,20 @@ public class UsuarioController {
                         .body(new ErrorResponse("Datos inválidos", "El rol es requerido"));
             }
 
-            usuario newuser = usuarioService.crearUsuario(
+            usuario newUser = usuarioService.crearUsuario(
                 user.getUsername(),
                 user.getPassword(),
                 user.getCorreo(),
                 user.getRol().getId()
             );
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(newuser);
+            EntityModel<usuario> userModel = EntityModel.of(newUser);
+            userModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuario(newUser.getId(), null)).withSelfRel());
+            userModel.add(linkTo(methodOn(UsuarioController.class).actualizarUsuario(newUser.getId(), null, null)).withRel("update"));
+            userModel.add(linkTo(methodOn(UsuarioController.class).eliminarUsuario(newUser.getId(), null)).withRel("delete"));
+            userModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withRel("all-users"));
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(userModel);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Error al crear usuario", e.getMessage()));
@@ -222,7 +303,7 @@ public class UsuarioController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> eliminarusuario(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<?> eliminarUsuario(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
             if (token == null || !jwtUtil.esTokenValido(token)) {
@@ -237,7 +318,13 @@ public class UsuarioController {
             }
 
             String mensaje = usuarioService.eliminarusuarioporid(id);
-            return ResponseEntity.ok(new SuccessResponse(mensaje));
+            
+            SuccessResponse response = new SuccessResponse(mensaje);
+            EntityModel<SuccessResponse> responseModel = EntityModel.of(response);
+            responseModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withRel("all-users"));
+            responseModel.add(linkTo(methodOn(UsuarioController.class).crearUsuario(null, null)).withRel("create-user"));
+            
+            return ResponseEntity.ok(responseModel);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ErrorResponse("Error al eliminar usuario", e.getMessage()));
@@ -249,8 +336,7 @@ public class UsuarioController {
 
     @Operation(summary = "Actualizar usuario", description = "Permite actualizar los datos de un usuario existente")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente",
-            content = @Content(schema = @Schema(implementation = usuario.class))),
+        @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente"),
         @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
@@ -263,8 +349,20 @@ public class UsuarioController {
                         .body(new ErrorResponse("Acceso no autorizado", "Token inválido o faltante"));
             }
 
+            String rol = jwtUtil.obtenerRol(token);
+            if (!"ADMIN".equals(rol)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Acceso denegado", "Se requiere rol de ADMIN"));
+            }
+
             usuario usuarioModificado = usuarioService.actualizarUsuario(id, datosnuevos);
-            return ResponseEntity.ok(usuarioModificado);
+            
+            EntityModel<usuario> userModel = EntityModel.of(usuarioModificado);
+            userModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuario(id, null)).withSelfRel());
+            userModel.add(linkTo(methodOn(UsuarioController.class).eliminarUsuario(id, null)).withRel("delete"));
+            userModel.add(linkTo(methodOn(UsuarioController.class).obtenerUsuarios(null)).withRel("all-users"));
+            
+            return ResponseEntity.ok(userModel);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Error al actualizar usuario", e.getMessage()));
