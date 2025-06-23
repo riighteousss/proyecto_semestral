@@ -11,6 +11,7 @@ import com.example.usuarios.model.CambioContrasena;
 import com.example.usuarios.model.InicioSesion;
 import com.example.usuarios.model.Rol;
 import com.example.usuarios.model.usuario;
+import com.example.usuarios.service.JwtUtil;
 import com.example.usuarios.service.RoleService;
 import com.example.usuarios.service.UsuarioService;
 
@@ -26,14 +27,15 @@ import jakarta.servlet.http.HttpServletRequest;
 @Tag(name = "usuarios", description = "Operaciones relacionadas con la gestión de usuarios, autenticación y roles")
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "*") // Configurar según tus necesidades
+@CrossOrigin(origins = "*")
 public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
     @Autowired
     private RoleService roleService;
+    @Autowired
+    private JwtUtil jwtUtil;
 
-    // ===== ENDPOINT PARA LOGIN CON TOKEN =====
     @Operation(summary = "Iniciar sesión", description = "Autentica un usuario y devuelve un token JWT")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Autenticación exitosa",
@@ -45,7 +47,6 @@ public class UsuarioController {
     @PostMapping("/auth/login")
     public ResponseEntity<?> iniciarSesion(@RequestBody InicioSesion loginRequest) {
         try {
-            // Validación básica
             if (loginRequest.getUsername() == null || loginRequest.getPassword() == null) {
                 return ResponseEntity.badRequest().body("Username y password son requeridos");
             }
@@ -66,7 +67,6 @@ public class UsuarioController {
         }
     }
 
-    // ===== ENDPOINT PARA CAMBIAR CONTRASEÑA =====
     @Operation(summary = "Cambiar contraseña", description = "Permite a un usuario cambiar su contraseña actual")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Contraseña cambiada exitosamente"),
@@ -77,26 +77,21 @@ public class UsuarioController {
         try {
             String mensaje = usuarioService.cambiarContrasena(cambioContrasena);
             return ResponseEntity.ok(new SuccessResponse(mensaje));
-            
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Error al cambiar contraseña", e.getMessage()));
         }
     }
 
-    // ===== ENDPOINT PARA LOGOUT (OPCIONAL) =====
     @Operation(summary = "Cerrar sesión", description = "Cierra la sesión del usuario (en JWT stateless se maneja en el frontend)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Sesión cerrada exitosamente")
     })
     @PostMapping("/auth/logout")
     public ResponseEntity<?> cerrarSesion(HttpServletRequest request) {
-        // En JWT stateless, el logout se maneja en el frontend eliminando el token
-        // Aquí podrías implementar una blacklist de tokens si es necesario
         return ResponseEntity.ok(new SuccessResponse("Sesión cerrada exitosamente"));
     }
 
-    //endpoint para consultar todos los usuarios
     @Operation(summary = "Obtener todos los usuarios", description = "Devuelve una lista con todos los usuarios registrados")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida correctamente",
@@ -104,8 +99,14 @@ public class UsuarioController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/users")
-    public ResponseEntity<?> obtenerUsuarios(){
+    public ResponseEntity<?> obtenerUsuarios(HttpServletRequest request) {
         try {
+            String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
+            if (token == null || !jwtUtil.esTokenValido(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Acceso no autorizado", "Token inválido o faltante"));
+            }
+
             List<usuario> users = usuarioService.buscarUsuarios();
             if(users.isEmpty()){
                 return ResponseEntity.ok(new SuccessResponse("No hay usuarios registrados", users));
@@ -117,7 +118,6 @@ public class UsuarioController {
         }
     }
 
-    //endpoint para obtener un usuario por su id
     @Operation(summary = "Buscar usuario por ID", description = "Devuelve los datos del usuario solicitado")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Usuario encontrado correctamente",
@@ -126,8 +126,14 @@ public class UsuarioController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/users/{id}")
-    public ResponseEntity<?> obtenerusuario(@PathVariable Long id){
+    public ResponseEntity<?> obtenerusuario(@PathVariable Long id, HttpServletRequest request) {
         try {
+            String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
+            if (token == null || !jwtUtil.esTokenValido(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Acceso no autorizado", "Token inválido o faltante"));
+            }
+
             usuario usuario = usuarioService.getUsuario(id);
             return ResponseEntity.ok(usuario);
         } catch (RuntimeException e) {
@@ -139,7 +145,6 @@ public class UsuarioController {
         }
     }
 
-    //endpoint para consultar todos los roles
     @Operation(summary = "Obtener todos los roles", description = "Devuelve una lista con todos los roles disponibles")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de roles obtenida correctamente",
@@ -147,8 +152,14 @@ public class UsuarioController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/roles")
-    public ResponseEntity<?> obtenerRoles(){
+    public ResponseEntity<?> obtenerRoles(HttpServletRequest request) {
         try {
+            String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
+            if (token == null || !jwtUtil.esTokenValido(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Acceso no autorizado", "Token inválido o faltante"));
+            }
+
             List<Rol> roles = roleService.buscarRoles();
             if(roles.isEmpty()){
                 return ResponseEntity.ok(new SuccessResponse("No hay roles registrados", roles));
@@ -160,7 +171,6 @@ public class UsuarioController {
         }
     }
 
-    //endpoint para crear un nuevo usuario
     @Operation(summary = "Crear nuevo usuario", description = "Permite registrar un nuevo usuario en el sistema")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Usuario creado correctamente",
@@ -169,9 +179,20 @@ public class UsuarioController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @PostMapping("/users")
-    public ResponseEntity<?> crearUsuario(@RequestBody usuario user){
+    public ResponseEntity<?> crearUsuario(@RequestBody usuario user, HttpServletRequest request) {
         try {
-            // Validación básica
+            String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
+            if (token == null || !jwtUtil.esTokenValido(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Acceso no autorizado", "Token inválido o faltante"));
+            }
+            
+            String rol = jwtUtil.obtenerRol(token);
+            if (!"ADMIN".equals(rol)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Acceso denegado", "Se requiere rol de ADMIN"));
+            }
+
             if (user.getRol() == null || user.getRol().getId() <= 0) {
                 return ResponseEntity.badRequest()
                         .body(new ErrorResponse("Datos inválidos", "El rol es requerido"));
@@ -185,7 +206,6 @@ public class UsuarioController {
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(newuser);
-            
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Error al crear usuario", e.getMessage()));
@@ -195,7 +215,6 @@ public class UsuarioController {
         }
     }
 
-    //endpoint para eliminar usuario por su id
     @Operation(summary = "Eliminar usuario", description = "Elimina un usuario del sistema por su ID")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Usuario eliminado correctamente"),
@@ -203,8 +222,20 @@ public class UsuarioController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> eliminarusuario(@PathVariable Long id){
+    public ResponseEntity<?> eliminarusuario(@PathVariable Long id, HttpServletRequest request) {
         try {
+            String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
+            if (token == null || !jwtUtil.esTokenValido(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Acceso no autorizado", "Token inválido o faltante"));
+            }
+            
+            String rol = jwtUtil.obtenerRol(token);
+            if (!"ADMIN".equals(rol)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse("Acceso denegado", "Se requiere rol de ADMIN"));
+            }
+
             String mensaje = usuarioService.eliminarusuarioporid(id);
             return ResponseEntity.ok(new SuccessResponse(mensaje));
         } catch (RuntimeException e) {
@@ -216,7 +247,6 @@ public class UsuarioController {
         }
     }
 
-    //endpoint para actualizar datos de usuario
     @Operation(summary = "Actualizar usuario", description = "Permite actualizar los datos de un usuario existente")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente",
@@ -225,8 +255,14 @@ public class UsuarioController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @PutMapping("/users/{id}")
-    public ResponseEntity<?> actualizarUsuario(@PathVariable Long id, @RequestBody usuario datosnuevos) {
+    public ResponseEntity<?> actualizarUsuario(@PathVariable Long id, @RequestBody usuario datosnuevos, HttpServletRequest request) {
         try {
+            String token = jwtUtil.extraerTokenDelHeader(request.getHeader("Authorization"));
+            if (token == null || !jwtUtil.esTokenValido(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Acceso no autorizado", "Token inválido o faltante"));
+            }
+
             usuario usuarioModificado = usuarioService.actualizarUsuario(id, datosnuevos);
             return ResponseEntity.ok(usuarioModificado);
         } catch (RuntimeException e) {
@@ -238,7 +274,6 @@ public class UsuarioController {
         }
     }
 
-    // Clases para respuestas estandarizadas
     @Schema(description = "Respuesta de error estandarizada")
     public static class ErrorResponse {
         @Schema(description = "Tipo de error", example = "Error de autenticación")
@@ -254,7 +289,6 @@ public class UsuarioController {
             this.timestamp = System.currentTimeMillis();
         }
 
-        // Getters
         public String getError() { return error; }
         public String getMensaje() { return mensaje; }
         public long getTimestamp() { return timestamp; }
@@ -280,7 +314,6 @@ public class UsuarioController {
             this.timestamp = System.currentTimeMillis();
         }
 
-        // Getters
         public String getMensaje() { return mensaje; }
         public Object getData() { return data; }
         public long getTimestamp() { return timestamp; }
