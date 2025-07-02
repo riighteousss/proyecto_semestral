@@ -1,4 +1,4 @@
-package test.java.com.example.gestiontecnicos.service;
+package com.example.gestiontecnicos.service;
 
 import com.example.gestiontecnicos.model.tecnicos;
 import com.example.gestiontecnicos.repository.RepositoryTecnicos;
