@@ -31,6 +31,9 @@ public class tecnicos {
      @Schema(description = "especialidad del tecnico, puede ser agregado o dejado como null en el caso de no tener especialicacion en un area  ejemplos - Técnico de celulares,Especialista en micro soldadura etc.")
      @Column(nullable = true)
      private String especialidad;
+     @Schema(description = "define si el tecnico esta habilitado(contrato vigente) o no")
+     @Column()
+     private boolean estado;
      
 
 }

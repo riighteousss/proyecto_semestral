@@ -37,6 +37,7 @@ public class ServiceTecnicos {
         tec.setRut(rut);
         tec.setNombre(nombre);
         tec.setEspecialidad(especialidad);
+        tec.setEstado(true);
         return RepositoryTecnicos.save(tec);
     }
     //actualizar especialidad de un tecnico
@@ -49,4 +50,13 @@ public class ServiceTecnicos {
         return RepositoryTecnicos.save(tecnicoExistente);
 
     }    
+    //actualizar tecnico activo/no activo
+    public tecnicos actualizarestado(long id, boolean estado){
+             tecnicos tecnicoExistente = RepositoryTecnicos.findById(id)
+            .orElseThrow(() -> new RuntimeException("tecnico de ID: " + id+" no encontrado "));
+            tecnicoExistente.setEstado(estado);
+
+         return RepositoryTecnicos.save(tecnicoExistente);
+    }
+
 }

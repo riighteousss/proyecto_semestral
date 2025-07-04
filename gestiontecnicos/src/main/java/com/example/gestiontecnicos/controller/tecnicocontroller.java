@@ -112,5 +112,27 @@ public class tecnicocontroller {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 }
+//endpoint para actualizar estado activo/no activo
+ @Operation(summary = "Actualizar estado del técnico", description = "Permite actualizar el estado del técnico indicado por su ID")
+     @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Estado actualizado correctamente",
+        content = @Content(schema = @Schema(implementation = tecnicos.class))),
+    @ApiResponse(responseCode = "404", description = "Técnico no encontrado, no se puede actualizar el estado")
+})
+   @PutMapping("/tecnicos/{id}/estado")
+public ResponseEntity<?> actualizarEstado(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    try {
+      
+        boolean estado = Boolean.parseBoolean(body.get("estado").toString());
 
+        tecnicos tecnicoActualizado = serviceTecnicos.actualizarestado(id, estado);
+
+        return ResponseEntity.ok(tecnicoActualizado);
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    
+}
+}
 }
