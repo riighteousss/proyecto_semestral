@@ -1,5 +1,7 @@
 package com.example.equipos.model;
 
+import org.springframework.hateoas.RepresentationModel;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,7 +19,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "modelo de equipo(dispositivos de un usuario)")
-public class equipo {
+public class equipo extends RepresentationModel<equipo>{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

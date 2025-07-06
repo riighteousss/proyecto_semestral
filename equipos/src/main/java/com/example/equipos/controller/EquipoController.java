@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.equipos.model.equipo;
 import com.example.equipos.service.EquipoService;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -62,14 +64,17 @@ public class EquipoController {
     public ResponseEntity<?> agregarequipo(@RequestBody equipo newequipo) {
         try {
 
-        equiposervice.agregarequipo(
+        equipo equipoagregado = equiposervice.agregarequipo(
             newequipo.getIdusuario(), 
             newequipo.getTipodispositivo(),
             newequipo.getMarca(),
             newequipo.getModelo()
             );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(newequipo);
+            equipoagregado.add(linkTo(methodOn(EquipoController.class).obtenerequiporid(equipoagregado.getId())).withRel("buscar equipo por id"));
+            equipoagregado.add(linkTo(methodOn(EquipoController.class).eliminarquipoporid(equipoagregado.getId())).withRel("eliminar equipo por id"));
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(equipoagregado);
     }   catch (RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
@@ -85,6 +90,7 @@ public class EquipoController {
     public ResponseEntity<String> eliminarquipoporid(@Parameter(description = "id equipo", required =true)@PathVariable Long id){
         try {
         String mensaje = equiposervice.eliminarequipoporid(id);
+        
         return ResponseEntity.ok(mensaje);
         } catch (RuntimeException e) {
 
@@ -121,6 +127,9 @@ public class EquipoController {
     public ResponseEntity<?> obtenerequiporid(@Parameter(description = "id equipo", required =true)@PathVariable Long id) {
            try {
             equipo equipo = equiposervice.buscarporid(id);
+
+            equipo.add(linkTo(methodOn(EquipoController.class).obtenerequiporid(equipo.getId())).withSelfRel());
+            equipo.add(linkTo(methodOn(EquipoController.class).eliminarquipoporid(equipo.getId())).withRel("eliminar"));
             return ResponseEntity.ok(equipo);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
