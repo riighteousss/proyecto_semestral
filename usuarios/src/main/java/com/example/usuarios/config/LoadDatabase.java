@@ -15,7 +15,7 @@ public class LoadDatabase {
     @Bean
     CommandLineRunner initDatabase(RoleRepository roleRepo, UsuarioRepository userRepo) {
         return args -> {
-            
+
             if (roleRepo.count() == 0 && userRepo.count() == 0) {
                 // Insertar roles
                 Rol admin = new Rol();
@@ -29,7 +29,7 @@ public class LoadDatabase {
                 // Insertar usuarios
                 usuario u1 = new usuario();
                 u1.setUsername("admin");
-                u1.setPassword("admin123"); // En producción deberías cifrar esto
+                u1.setPassword("admin123"); 
                 u1.setCorreo("admin@example.com");
                 u1.setRol(admin);
                 userRepo.save(u1);
