@@ -1,5 +1,8 @@
 package com.example.gestiontecnicos.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
 import java.util.Map;
 
@@ -60,6 +63,10 @@ public class tecnicocontroller {
         try {
             tecnicos tec = serviceTecnicos.buscarporid(id);
 
+             tec.add(linkTo(methodOn(tecnicocontroller.class).buscarporid(tec.getId())).withSelfRel());
+             tec.add(linkTo(methodOn(tecnicocontroller.class).actualizarEstado(tec.getId(),null)).withRel("actualizar estado"));
+             tec.add(linkTo(methodOn(tecnicocontroller.class).actualizarEspecialidad(tec.getId(),null)).withRel("actualizar especialidad"));
+
             return ResponseEntity.ok(tec);
     }   catch (RuntimeException e) {
         return ResponseEntity.notFound().build();
@@ -81,8 +88,11 @@ public class tecnicocontroller {
             tecnico.getRut(),
             tecnico.getNombre(),
             tecnico.getEspecialidad()
-
         );
+        
+         newtecnico.add(linkTo(methodOn(tecnicocontroller.class).actualizarEstado(newtecnico.getId(),null)).withRel("actualizar estado"));
+         newtecnico.add(linkTo(methodOn(tecnicocontroller.class).actualizarEspecialidad(newtecnico.getId(),null)).withRel("actualizar especialidad"));
+         newtecnico.add(linkTo(methodOn(tecnicocontroller.class).buscarporid(newtecnico.getId())).withRel("buscar por id"));
         return ResponseEntity.status(HttpStatus.CREATED).body(newtecnico);
     }   catch (RuntimeException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
@@ -105,6 +115,10 @@ public class tecnicocontroller {
        
         tecnicos tecnicoActualizado = serviceTecnicos.actualizarEspecializacion(id, especialidad);
 
+         tecnicoActualizado.add(linkTo(methodOn(tecnicocontroller.class).actualizarEspecialidad(tecnicoActualizado.getId(),null)).withSelfRel());
+         tecnicoActualizado.add(linkTo(methodOn(tecnicocontroller.class).actualizarEstado(tecnicoActualizado.getId(),null)).withRel("actualizar estado"));
+         tecnicoActualizado.add(linkTo(methodOn(tecnicocontroller.class).buscarporid(tecnicoActualizado.getId())).withRel("buscar por id"));
+
        
         return ResponseEntity.ok(tecnicoActualizado);
 
@@ -126,6 +140,10 @@ public ResponseEntity<?> actualizarEstado(@PathVariable Long id, @RequestBody Ma
         boolean estado = Boolean.parseBoolean(body.get("estado").toString());
 
         tecnicos tecnicoActualizado = serviceTecnicos.actualizarestado(id, estado);
+
+         tecnicoActualizado.add(linkTo(methodOn(tecnicocontroller.class).actualizarEstado(tecnicoActualizado.getId(),null)).withSelfRel());
+         tecnicoActualizado.add(linkTo(methodOn(tecnicocontroller.class).actualizarEspecialidad(tecnicoActualizado.getId(),null)).withRel("actualizar especialidad"));
+         tecnicoActualizado.add(linkTo(methodOn(tecnicocontroller.class).buscarporid(tecnicoActualizado.getId())).withRel("buscar por id"));
 
         return ResponseEntity.ok(tecnicoActualizado);
     } catch (RuntimeException e) {
