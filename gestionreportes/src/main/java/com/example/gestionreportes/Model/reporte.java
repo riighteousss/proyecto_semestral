@@ -1,6 +1,8 @@
 package com.example.gestionreportes.Model;
 import java.util.Date;
 
+import org.springframework.hateoas.RepresentationModel;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "reporte")
 @Entity
 @Schema(description = "reporte")
-public class reporte {
+public class reporte extends RepresentationModel<reporte>  {
      @Schema(description = "ID autoincrementable")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

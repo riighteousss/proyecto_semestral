@@ -110,6 +110,12 @@
             <artifactId>swagger-annotations</artifactId>
             <version>2.2.21</version>
         </dependency>
+          <!-- hateoas  (para @Schema) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-hateoas</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

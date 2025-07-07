@@ -1,7 +1,11 @@
 package com.example.gestionsolicitudes.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -53,6 +57,32 @@ public class solicitudcontroller {
         }
         return ResponseEntity.ok(solicitud);
     }
+    //endpoint para buscar solicitud por id
+    @Operation(summary = "Obtener solicitud por id", description = "retorna la solicitud solicitada.")
+@ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "solcitud obtenida correctamente",
+        content = @Content(schema = @Schema(implementation = solicitud.class))),
+    @ApiResponse(responseCode = "404", description = "solicitud no encontrada/inexistente")
+})
+    @GetMapping("/solicitudes/{id}")
+    public ResponseEntity<?> buscarporid(@Parameter(description = "id de la solicitud",required = true)@PathVariable Long id) {
+        try {
+         solicitud solicitud = solicitudservice.buscarporid(id);
+
+        solicitud.add(linkTo(methodOn(solicitudcontroller.class).buscarporid(solicitud.getId())).withSelfRel());
+        solicitud.add(linkTo(methodOn(solicitudcontroller.class).eliminarSolicitud(solicitud.getId())).withRel("eliminar solicitud por id"));
+        solicitud.add(linkTo(methodOn(solicitudcontroller.class).buscartodasporusuario(solicitud.getIdusuario())).withRel("buscar todas las solicitudes de un usuario"));
+        solicitud.add(linkTo(methodOn(solicitudcontroller.class).actualizarporusuario(solicitud.getIdusuario(),solicitud.getId(),null)).withRel("actualizar solicitud por id usuario y id solicitud"));
+
+        return ResponseEntity.ok(solicitud);
+        } catch (RuntimeException e) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+
+    }
+    
+
     //endpoint para ver todas las solicitudes de un usuario
 @Operation(summary = "Obtener solicitudes por usuario", description = "retorna una lista con todas las solicitudes registradas de un usuario específico.")
 @ApiResponses(value = {
@@ -60,10 +90,11 @@ public class solicitudcontroller {
         content = @Content(schema = @Schema(implementation = solicitud.class))),
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado o sin solicitudes")
 })
-    @GetMapping("/solicitudes/{idusuario}")
+    @GetMapping("/solicitudes/usuario/{idusuario}")
     public ResponseEntity<?> buscartodasporusuario(@Parameter(description = "llave foranea de id usuario",required = true)@PathVariable Long idusuario) {
         try {
          List<solicitud> solicitudes = solicitudservice.buscarporidusuario(idusuario);
+         
 
         return ResponseEntity.ok(solicitudes);
         } catch (RuntimeException e) {
@@ -88,6 +119,11 @@ public class solicitudcontroller {
             solicitud.getIdusuario(),
             solicitud.getIdequipo()
         );
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).crearsolicitud(newsolicitud)).withSelfRel());
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).buscarporid(newsolicitud.getId())).withRel("buscar solicitud por id"));
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).eliminarSolicitud(newsolicitud.getId())).withRel("eliminar solicitud por id"));
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).buscartodasporusuario(newsolicitud.getIdusuario())).withRel("busacr todas las solicitudes de un usuario"));
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).actualizarporusuario(newsolicitud.getIdusuario(),newsolicitud.getId(),null)).withRel("actualizar solicitud por id"));
         return ResponseEntity.status(HttpStatus.CREATED).body(newsolicitud);
     }   catch (RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -100,7 +136,7 @@ public class solicitudcontroller {
         content = @Content(schema = @Schema(implementation = solicitud.class))),
     @ApiResponse(responseCode = "400", description = "Solicitud no válida o error en la actualización")
 })
-    @PutMapping("/solicitudes/{idusuario}/{idsolicitud}")
+    @PutMapping("/solicitudes/usuario/{idusuario}/{idsolicitud}")
     public ResponseEntity<?> actualizarporusuario(@Parameter(description = "llave foranea de id usuario",required = true)@PathVariable Long idusuario, @Parameter(description = "id de solicitud ya existente",required = true)@PathVariable Long idsolicitud,@RequestBody actualizarsolicitud datosActualizados) {
     try {
         solicitud solicitudActualizada = solicitudservice.actualizarporusuario(
@@ -126,8 +162,14 @@ public class solicitudcontroller {
 @DeleteMapping("/solicitudes/{idsolicitud}")
 public ResponseEntity<?> eliminarSolicitud(@Parameter(description = "ID de la solicitud a eliminar" , required = true)@PathVariable Long idsolicitud){
  try {
+        
         String mensaje = solicitudservice.eliminarporid(idsolicitud);
-        return ResponseEntity.ok(mensaje);
+
+        EntityModel<String> newmensaje = EntityModel.of(mensaje);
+        newmensaje.add(linkTo(methodOn(solicitudcontroller.class).crearsolicitud(null))
+            .withRel("crear-solicitud"));
+
+        return ResponseEntity.ok(newmensaje);
         } catch (RuntimeException e) {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

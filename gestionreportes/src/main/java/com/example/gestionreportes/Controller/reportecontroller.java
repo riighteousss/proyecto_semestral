@@ -7,6 +7,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -51,6 +54,11 @@ public class reportecontroller {
    public ResponseEntity<reporte> buscarporid(@PathVariable Long id){
          try {
             reporte reportes = Reporteservice.buscarreporteporid(id);
+
+            reportes.add(linkTo(methodOn(reportecontroller.class).buscarporid(reportes.getId())).withSelfRel());
+            reportes.add(linkTo(methodOn(reportecontroller.class).buscarreporte()).withRel("buscar todos los reportes"));
+            reportes.add(linkTo(methodOn(reportecontroller.class).eliminarreporte(reportes.getId())).withRel("eliminar reportes"));
+            reportes.add(linkTo(methodOn(reportecontroller.class).buscarporidusuario(reportes.getIdusuario())).withRel("buscar todos los reportes de un usuario"));
             return ResponseEntity.ok(reportes);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
@@ -70,8 +78,12 @@ public class reportecontroller {
             reporte.getTiporeporte(),
             reporte.getDescripciongeneral(),
             reporte.getIdusuario()
-            
         );
+        newreporte.add(linkTo(methodOn(reportecontroller.class).crearreporte(null)).withSelfRel());
+        newreporte.add(linkTo(methodOn(reportecontroller.class).buscarreporte()).withRel("buscar todos los reportes"));
+        newreporte.add(linkTo(methodOn(reportecontroller.class).buscarporid(newreporte.getId())).withRel("buscar reporte por id"));
+        newreporte.add(linkTo(methodOn(reportecontroller.class).eliminarreporte(newreporte.getId())).withRel("eliminar reportes"));
+        newreporte.add(linkTo(methodOn(reportecontroller.class).buscarporidusuario(newreporte.getIdusuario())).withRel("buscar todos los reportes de un usuario"));
         return ResponseEntity.status(HttpStatus.CREATED).body(newreporte);
     }   catch (RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -104,7 +116,7 @@ public class reportecontroller {
      public ResponseEntity<?> buscarporidusuario(@PathVariable Long id){
         try {
          List<reporte> reporte = Reporteservice.buscarporidusuario(id);
-
+         
         return ResponseEntity.ok(reporte);
         } catch (RuntimeException e) {
 

@@ -27,7 +27,7 @@ public List<solicitud> buscarsolicitudes(){
 //buscar solicitudes por id
 public solicitud buscarporid(Long id){
   return Solicitudrepository.findById(id)
- .orElseThrow(()-> new RuntimeException("Solicitud no encontrada. porfavor escriba un id valido."));
+ .orElseThrow(()-> new RuntimeException("Solicitud no encontrada. porfavor ingrese un id valido."));
 }
 //metodo para buscar todos las solicitudes de un usuario
 public List<solicitud>buscarporidusuario(Long idusuario){
