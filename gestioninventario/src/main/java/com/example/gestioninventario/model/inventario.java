@@ -1,5 +1,7 @@
 package com.example.gestioninventario.model;
 
+import org.springframework.hateoas.RepresentationModel;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "Inventario")
 @Entity
 @Schema(description = "inventario")
-public class inventario {
+public class inventario extends RepresentationModel<inventario>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(description = "ID autoincrementable")

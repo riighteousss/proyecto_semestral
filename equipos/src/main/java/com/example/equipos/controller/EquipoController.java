@@ -73,6 +73,7 @@ public class EquipoController {
 
             equipoagregado.add(linkTo(methodOn(EquipoController.class).obtenerequiporid(equipoagregado.getId())).withRel("buscar equipo por id"));
             equipoagregado.add(linkTo(methodOn(EquipoController.class).eliminarquipoporid(equipoagregado.getId())).withRel("eliminar equipo por id"));
+            equipoagregado.add(linkTo(methodOn(EquipoController.class).buscarequiposdeusuarioporid(equipoagregado.getIdusuario())).withRel("buscar todos por id usuario"));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(equipoagregado);
     }   catch (RuntimeException e) {
