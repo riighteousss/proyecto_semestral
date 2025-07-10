@@ -38,24 +38,22 @@ public List<solicitud>buscarporidusuario(Long idusuario){
           return solicitud;
   
 }
-//metodo para crear una nueva solicitud
-public solicitud crearsolicitud(String tiposolicitud, String descripciongeneral, long idusuario,Long idequipo){
-     // Validar si el usuario existe antes de crear el reporte
-        Map<String, Object> usuario = usuarioClient.obtenerusuarioid(idusuario);
+// metodo para crear una nueva solicitud
+public solicitud crearsolicitud(String tiposolicitud, String descripciongeneral, long idusuario, Long idequipo, String token) {
+    // Validar si el usuario existe antes de crear el reporte
+    Map<String, Object> usuario = usuarioClient.obtenerUsuarioPorId(idusuario, token);
 
-        if (usuario == null || usuario.isEmpty()) {
-            throw new RuntimeException("Usuario no encontrado, no se puede agregar la solicitud");
-        }
+    if (usuario == null || usuario.isEmpty()) {
+        throw new RuntimeException("Usuario no encontrado, no se puede agregar la solicitud");
+    }
 
+    // valida si existe el equipo registrado
+    Map<String, Object> equipo = equipoClient.obtenerequipoid(idequipo);
 
-     //valida si existe el equipo resgistrado
+    if (equipo == null || equipo.isEmpty()) {
+        throw new RuntimeException("Equipo no encontrado, no se puede agregar la solicitud");
+    }
 
-      Map<String, Object> equipo = equipoClient.obtenerequipoid(idequipo);
-
-
-        if (equipo == null || equipo.isEmpty()) {
-            throw new RuntimeException("equipo no encontrado, no se puede agregar la solicitud");
-        }
     solicitud solicitud = new solicitud();
     solicitud.setTiposolicitud(tiposolicitud);
     solicitud.setDescripciongeneral(descripciongeneral);

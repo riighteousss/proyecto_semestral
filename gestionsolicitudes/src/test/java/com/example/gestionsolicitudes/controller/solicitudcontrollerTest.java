@@ -70,48 +70,53 @@ public class solicitudcontrollerTest {
                 .andExpect(content().string("No se encontraron solicitudes"));
     }
 
-    @Test
-    public void testCrearSolicitud_valido() throws Exception {
-        solicitud nueva = new solicitud();
-        nueva.setTiposolicitud("tipo");
-        nueva.setDescripciongeneral("desc");
-        nueva.setIdusuario(1L);
-        nueva.setIdequipo(2L);
+   @Test
+public void testCrearSolicitud_valido() throws Exception {
+    solicitud nueva = new solicitud();
+    nueva.setTiposolicitud("tipo");
+    nueva.setDescripciongeneral("desc");
+    nueva.setIdusuario(1L);
+    nueva.setIdequipo(2L);
 
-        solicitud creada = new solicitud();
-        creada.setId(1L);
-        creada.setTiposolicitud("tipo");
-        creada.setDescripciongeneral("desc");
-        creada.setIdusuario(1L);
-        creada.setIdequipo(2L);
+    solicitud creada = new solicitud();
+    creada.setId(1L);
+    creada.setTiposolicitud("tipo");
+    creada.setDescripciongeneral("desc");
+    creada.setIdusuario(1L);
+    creada.setIdequipo(2L);
 
-        when(solicitudService.crearsolicitud("tipo", "desc", 1L, 2L)).thenReturn(creada);
+    String token = "token-de-prueba";
 
-        mockMvc.perform(post("/api/v1/solicitudes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(nueva)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1));
-    }
+    when(solicitudService.crearsolicitud("tipo", "desc", 1L, 2L, token)).thenReturn(creada);
 
-    @Test
-    public void testCrearSolicitud_error() throws Exception {
-        solicitud nueva = new solicitud();
-        nueva.setTiposolicitud("tipo");
-        nueva.setDescripciongeneral("desc");
-        nueva.setIdusuario(1L);
-        nueva.setIdequipo(2L);
+    mockMvc.perform(post("/api/v1/solicitudes")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer " + token)
+                    .content(objectMapper.writeValueAsString(nueva)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(1));
+}
 
-        when(solicitudService.crearsolicitud("tipo", "desc", 1L, 2L))
-                .thenThrow(new RuntimeException("Usuario no encontrado"));
+@Test
+public void testCrearSolicitud_error() throws Exception {
+    solicitud nueva = new solicitud();
+    nueva.setTiposolicitud("tipo");
+    nueva.setDescripciongeneral("desc");
+    nueva.setIdusuario(1L);
+    nueva.setIdequipo(2L);
 
-        mockMvc.perform(post("/api/v1/solicitudes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(nueva)))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Usuario no encontrado"));
-    }
+    String token = "token-de-prueba";
 
+    when(solicitudService.crearsolicitud("tipo", "desc", 1L, 2L, token))
+            .thenThrow(new RuntimeException("Usuario no encontrado"));
+
+    mockMvc.perform(post("/api/v1/solicitudes")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer " + token)
+                    .content(objectMapper.writeValueAsString(nueva)))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string("Usuario no encontrado"));
+}
     @Test
     public void testActualizarSolicitud_valido() throws Exception {
         solicitud actualizada = new solicitud();

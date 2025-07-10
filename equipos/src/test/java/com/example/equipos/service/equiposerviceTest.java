@@ -1,13 +1,8 @@
 package com.example.equipos.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,8 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.commons.lang3.ObjectUtils.Null;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -51,7 +48,7 @@ public class equiposerviceTest {
         assertEquals(2, resultado.size());
         verify(equiporepository, times(1)).findAll();
     }
-   // Test buscarporid
+
     @Test
     public void testBuscarPorId() {
         equipo equipoMock = new equipo();
@@ -65,7 +62,6 @@ public class equiposerviceTest {
         assertEquals(1L, resultado.getId());
     }
 
-    // Test buscarporid (no existe)
     @Test
     public void testBuscarPorId_NoExiste() {
         when(equiporepository.findById(1L)).thenReturn(Optional.empty());
@@ -77,7 +73,6 @@ public class equiposerviceTest {
         assertTrue(ex.getMessage().contains("no encontrado"));
     }
 
-    // Test buscarporidusuario (con resultados)
     @Test
     public void testBuscarPorIdUsuario_ConResultados() {
         equipo equipo1 = new equipo();
@@ -92,7 +87,6 @@ public class equiposerviceTest {
         assertEquals(2, resultado.size());
     }
 
-    // Test buscarporidusuario (sin resultados)
     @Test
     public void testBuscarPorIdUsuario_SinResultados() {
         when(equiporepository.findByIdusuario(1L)).thenReturn(Collections.emptyList());
@@ -104,13 +98,12 @@ public class equiposerviceTest {
         assertTrue(ex.getMessage().contains("No se encontraron equipos"));
     }
 
-    // Test agregarequipo (usuario encontrado)
     @Test
     public void testAgregarEquipo_UsuarioEncontrado() {
         Map<String, Object> usuarioMock = new HashMap<>();
         usuarioMock.put("id", 1L);
 
-        when(usuarioClient.obtenerusuarioid(1L)).thenReturn(usuarioMock);
+        when(usuarioClient.obtenerUsuarioPorId(1L,"tokenDePrueba")).thenReturn(usuarioMock);
 
         equipo equipoGuardado = new equipo();
         equipoGuardado.setIdusuario(1L);
@@ -120,25 +113,23 @@ public class equiposerviceTest {
 
         when(equiporepository.save(any(equipo.class))).thenReturn(equipoGuardado);
 
-        equipo resultado = service.agregarequipo(1L, "Laptop", "HP", "Elitebook");
+        equipo resultado = service.agregarequipo(1L,"tokenDePrueba", "Laptop", "HP", "Elitebook");
 
         assertNotNull(resultado);
         assertEquals("Laptop", resultado.getTipodispositivo());
     }
 
-    // Test agregarequipo (usuario no encontrado)
     @Test
     public void testAgregarEquipo_UsuarioNoEncontrado() {
-        when(usuarioClient.obtenerusuarioid(1L)).thenReturn(null);
+        when(usuarioClient.obtenerUsuarioPorId(1L,"tokenDePrueba")).thenReturn(null);
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            service.agregarequipo(1L, "Tablet", "Samsung", "Galaxy Tab");
+            service.agregarequipo(1L,"tokenDePrueba", "Tablet", "Samsung", "Galaxy Tab");
         });
 
         assertTrue(ex.getMessage().contains("Usuario no encontrado"));
     }
 
-    // Test eliminar equipo (existe)
     @Test
     public void testEliminarEquipo_Existe() {
         when(equiporepository.existsById(1L)).thenReturn(true);
@@ -149,7 +140,6 @@ public class equiposerviceTest {
         verify(equiporepository, times(1)).deleteById(1L);
     }
 
-    // Test eliminar equipo (no existe)
     @Test
     public void testEliminarEquipo_NoExiste() {
         when(equiporepository.existsById(1L)).thenReturn(false);

@@ -1,6 +1,7 @@
 package com.example.gestionsolicitudes.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.*;
@@ -95,59 +96,65 @@ public class solicitudserviceTest {
         assertTrue(ex.getMessage().contains("No se encontraron solicitudes"));
     }
 
-    // Test crearsolicitud (usuario y equipo válidos)
-    @Test
-    public void testCrearSolicitud_Valido() {
-        Map<String, Object> usuarioMock = new HashMap<>();
-        usuarioMock.put("id", 1L);
+   // Test crearsolicitud (usuario y equipo válidos)
+@Test
+public void testCrearSolicitud_Valido() {
+    Map<String, Object> usuarioMock = new HashMap<>();
+    usuarioMock.put("id", 1L);
 
-        Map<String, Object> equipoMock = new HashMap<>();
-        equipoMock.put("id", 10L);
+    Map<String, Object> equipoMock = new HashMap<>();
+    equipoMock.put("id", 10L);
 
-        solicitud nueva = new solicitud();
-        nueva.setId(1L);
-        nueva.setIdusuario(1L);
-        nueva.setIdequipo(10L);
-        nueva.setTiposolicitud("Soporte");
-        nueva.setDescripciongeneral("Descripción");
+    solicitud nueva = new solicitud();
+    nueva.setId(1L);
+    nueva.setIdusuario(1L);
+    nueva.setIdequipo(10L);
+    nueva.setTiposolicitud("Soporte");
+    nueva.setDescripciongeneral("Descripción");
 
-        when(usuarioClient.obtenerusuarioid(1L)).thenReturn(usuarioMock);
-        when(equipoClient.obtenerequipoid(10L)).thenReturn(equipoMock);
-        when(repository.save(any(solicitud.class))).thenReturn(nueva);
+    String token = "token-de-prueba";
 
-        solicitud resultado = service.crearsolicitud("Soporte", "Descripción", 1L, 10L);
+    when(usuarioClient.obtenerUsuarioPorId(1L, token)).thenReturn(usuarioMock);
+    when(equipoClient.obtenerequipoid(10L)).thenReturn(equipoMock);
+    when(repository.save(any(solicitud.class))).thenReturn(nueva);
 
-        assertNotNull(resultado);
-        assertEquals("Soporte", resultado.getTiposolicitud());
-    }
+    solicitud resultado = service.crearsolicitud("Soporte", "Descripción", 1L, 10L, token);
 
-    // Test crearsolicitud (usuario no encontrado)
-    @Test
-    public void testCrearSolicitud_UsuarioNoEncontrado() {
-        when(usuarioClient.obtenerusuarioid(1L)).thenReturn(null);
+    assertNotNull(resultado);
+    assertEquals("Soporte", resultado.getTiposolicitud());
+}
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            service.crearsolicitud("Soporte", "desc", 1L, 10L);
-        });
+// Test crearsolicitud (usuario no encontrado)
+@Test
+public void testCrearSolicitud_UsuarioNoEncontrado() {
+    String token = "token-de-prueba";
 
-        assertTrue(ex.getMessage().contains("Usuario no encontrado"));
-    }
+    when(usuarioClient.obtenerUsuarioPorId(1L, token)).thenReturn(null);
 
-    // Test crearsolicitud (equipo no encontrado)
-    @Test
-    public void testCrearSolicitud_EquipoNoEncontrado() {
-        Map<String, Object> usuarioMock = new HashMap<>();
-        usuarioMock.put("id", 1L);
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+        service.crearsolicitud("Soporte", "desc", 1L, 10L, token);
+    });
 
-        when(usuarioClient.obtenerusuarioid(1L)).thenReturn(usuarioMock);
-        when(equipoClient.obtenerequipoid(10L)).thenReturn(null);
+    assertTrue(ex.getMessage().contains("Usuario no encontrado"));
+}
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            service.crearsolicitud("Soporte", "desc", 1L, 10L);
-        });
+// Test crearsolicitud (equipo no encontrado)
+@Test
+public void testCrearSolicitud_EquipoNoEncontrado() {
+    Map<String, Object> usuarioMock = new HashMap<>();
+    usuarioMock.put("id", 1L);
 
-        assertTrue(ex.getMessage().contains("equipo no encontrado"));
-    }
+    String token = "token-de-prueba";
+
+    when(usuarioClient.obtenerUsuarioPorId(1L, token)).thenReturn(usuarioMock);
+    when(equipoClient.obtenerequipoid(10L)).thenReturn(null);
+
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+        service.crearsolicitud("Soporte", "desc", 1L, 10L, token);
+    });
+
+    assertTrue(ex.getMessage().contains("equipo no encontrado"));
+}
 
     // Test eliminarsolicitudporid (existe)
     @Test

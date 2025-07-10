@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
@@ -103,32 +104,39 @@ public class solicitudcontroller {
         }
 
     }
-    // Endpoint para crear una nueva solicitud
-@Operation(summary = "Crear nueva solicitud", description = "Registra una nueva solicitud con los datos.")
+    @Operation(summary = "Crear nueva solicitud", description = "Registra una nueva solicitud con los datos.")
 @ApiResponses(value = {
     @ApiResponse(responseCode = "201", description = "Solicitud creada correctamente",
         content = @Content(schema = @Schema(implementation = solicitud.class))),
     @ApiResponse(responseCode = "404", description = "Error al crear la solicitud, usuario no encontrado o datos incorrectos")
 })
-    @PostMapping("/solicitudes")
-    public ResponseEntity<?> crearsolicitud(@RequestBody solicitud solicitud){
+@PostMapping("/solicitudes")
+public ResponseEntity<?> crearsolicitud(
+    @RequestBody solicitud solicitud,
+    @RequestHeader("Authorization") String authHeader
+) {
     try {
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
         solicitud newsolicitud = solicitudservice.crearsolicitud(
             solicitud.getTiposolicitud(),
             solicitud.getDescripciongeneral(),
             solicitud.getIdusuario(),
-            solicitud.getIdequipo()
+            solicitud.getIdequipo(),
+            token   // pasamos token al servicio
         );
-        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).crearsolicitud(newsolicitud)).withSelfRel());
+
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).crearsolicitud(newsolicitud, authHeader)).withSelfRel());
         newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).buscarporid(newsolicitud.getId())).withRel("buscar solicitud por id"));
         newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).eliminarSolicitud(newsolicitud.getId())).withRel("eliminar solicitud por id"));
-        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).buscartodasporusuario(newsolicitud.getIdusuario())).withRel("busacr todas las solicitudes de un usuario"));
-        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).actualizarporusuario(newsolicitud.getIdusuario(),newsolicitud.getId(),null)).withRel("actualizar solicitud por id"));
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).buscartodasporusuario(newsolicitud.getIdusuario())).withRel("buscar todas las solicitudes de un usuario"));
+        newsolicitud.add(linkTo(methodOn(solicitudcontroller.class).actualizarporusuario(newsolicitud.getIdusuario(), newsolicitud.getId(), null)).withRel("actualizar solicitud por id"));
+
         return ResponseEntity.status(HttpStatus.CREATED).body(newsolicitud);
-    }   catch (RuntimeException e) {
+    } catch (RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
-    }
+}
     //endpoint para actualizar una solicitud por usuario
     @Operation(summary = "Actualizar solicitud por usuario", description = "Actualiza una solicitud existente para un usuario específico.")
 @ApiResponses(value = {
@@ -166,7 +174,7 @@ public ResponseEntity<?> eliminarSolicitud(@Parameter(description = "ID de la so
         String mensaje = solicitudservice.eliminarporid(idsolicitud);
 
         EntityModel<String> newmensaje = EntityModel.of(mensaje);
-        newmensaje.add(linkTo(methodOn(solicitudcontroller.class).crearsolicitud(null))
+        newmensaje.add(linkTo(methodOn(solicitudcontroller.class).crearsolicitud(null,null))
             .withRel("crear-solicitud"));
 
         return ResponseEntity.ok(newmensaje);

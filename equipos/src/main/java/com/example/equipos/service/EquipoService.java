@@ -44,10 +44,10 @@ public class EquipoService {
 
     //metodo para agregar un nuevo equipo
 
-    public equipo agregarequipo(Long idusuario, String tipodispositivo, String marca, String modelo){
+    public equipo agregarequipo(Long idusuario, String tipodispositivo, String marca, String modelo, String token){
 
-        //validar si el usuario existe antes de agregar el equipo
-        Map<String, Object> usuario = usuarioClient.obtenerusuarioid(idusuario);
+         // validar si el usuario existe antes de agregar el equipo, enviando token
+        Map<String, Object> usuario = usuarioClient.obtenerUsuarioPorId(idusuario, token);
         
          if (usuario == null || usuario.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado, no se puede agregar el reporte");

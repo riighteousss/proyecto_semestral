@@ -7,14 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,7 +32,7 @@ public class equipocontrollerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private EquipoService equiposervice;
+    private EquipoService equipoService;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -45,30 +43,30 @@ public class equipocontrollerTest {
 
         List<equipo> listaMock = Arrays.asList(equipo1, equipo2);
 
-        when(equiposervice.buscarquipos()).thenReturn(listaMock);
+        when(equipoService.buscarquipos()).thenReturn(listaMock);
 
         mockMvc.perform(get("/api/v1/equipos"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
 
-        verify(equiposervice, times(1)).buscarquipos();
+        verify(equipoService, times(1)).buscarquipos();
     }
 
     @Test
     public void testObtenerTodosLosEquipos_sinEquipos() throws Exception {
-        when(equiposervice.buscarquipos()).thenReturn(Collections.emptyList());
+        when(equipoService.buscarquipos()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/v1/equipos"))
                 .andExpect(status().isNoContent());
 
-        verify(equiposervice, times(1)).buscarquipos();
+        verify(equipoService, times(1)).buscarquipos();
     }
 
     @Test
     public void testAgregarEquipo_usuarioEncontrado() throws Exception {
         equipo equipoNuevo = new equipo(1L, 1L, "Laptop", "HP", "Elitebook");
 
-        when(equiposervice.agregarequipo(anyLong(), anyString(), anyString(), anyString())).thenReturn(equipoNuevo);
+        when(equipoService.agregarequipo(anyLong(), anyString(), anyString(), anyString(), anyString())).thenReturn(equipoNuevo);
 
         mockMvc.perform(post("/api/v1/equipos")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,14 +74,14 @@ public class equipocontrollerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.tipodispositivo").value("Laptop"));
 
-        verify(equiposervice, times(1)).agregarequipo(anyLong(), anyString(), anyString(), anyString());
+        verify(equipoService, times(1)).agregarequipo(anyLong(), anyString(), anyString(), anyString(),anyString());
     }
 
     @Test
     public void testAgregarEquipo_usuarioNoEncontrado() throws Exception {
         equipo equipoNuevo = new equipo(1L, 1L, "Laptop", "HP", "Elitebook");
 
-        when(equiposervice.agregarequipo(anyLong(), anyString(), anyString(), anyString()))
+        when(equipoService.agregarequipo(anyLong(), anyString(), anyString(), anyString(),anyString()))
                 .thenThrow(new RuntimeException("Usuario no encontrado"));
 
         mockMvc.perform(post("/api/v1/equipos")
@@ -95,19 +93,19 @@ public class equipocontrollerTest {
 
     @Test
     public void testEliminarEquipo_existente() throws Exception {
-        when(equiposervice.eliminarequipoporid(1L))
+        when(equipoService.eliminarequipoporid(1L))
                 .thenReturn("el equipo de id:1 se ha eliminado correctamente");
 
         mockMvc.perform(delete("/api/v1/equipos/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("el equipo de id:1 se ha eliminado correctamente"));
 
-        verify(equiposervice, times(1)).eliminarequipoporid(1L);
+        verify(equipoService, times(1)).eliminarequipoporid(1L);
     }
 
     @Test
     public void testEliminarEquipo_noExiste() throws Exception {
-        when(equiposervice.eliminarequipoporid(1L))
+        when(equipoService.eliminarequipoporid(1L))
                 .thenThrow(new RuntimeException("el equipo de id:1 no existe"));
 
         mockMvc.perform(delete("/api/v1/equipos/1"))
@@ -121,18 +119,18 @@ public class equipocontrollerTest {
 
         List<equipo> listaMock = Arrays.asList(equipo1);
 
-        when(equiposervice.buscarporidusuario(1L)).thenReturn(listaMock);
+        when(equipoService.buscarporidusuario(1L)).thenReturn(listaMock);
 
         mockMvc.perform(get("/api/v1/equipos/todos/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
 
-        verify(equiposervice, times(1)).buscarporidusuario(1L);
+        verify(equipoService, times(1)).buscarporidusuario(1L);
     }
 
     @Test
     public void testBuscarEquiposPorUsuario_noEquipos() throws Exception {
-        when(equiposervice.buscarporidusuario(1L))
+        when(equipoService.buscarporidusuario(1L))
                 .thenThrow(new RuntimeException("No se encontraron equipos para el usuario con ID: 1"));
 
         mockMvc.perform(get("/api/v1/equipos/todos/1"))
@@ -144,7 +142,7 @@ public class equipocontrollerTest {
     public void testObtenerEquipoPorId_existente() throws Exception {
         equipo equipoMock = new equipo(1L, 1L, "Laptop", "Dell", "XPS");
 
-        when(equiposervice.buscarporid(1L)).thenReturn(equipoMock);
+        when(equipoService.buscarporid(1L)).thenReturn(equipoMock);
 
         mockMvc.perform(get("/api/v1/equipos/1"))
                 .andExpect(status().isOk())
@@ -153,7 +151,7 @@ public class equipocontrollerTest {
 
     @Test
     public void testObtenerEquipoPorId_noExiste() throws Exception {
-        when(equiposervice.buscarporid(1L))
+        when(equipoService.buscarporid(1L))
                 .thenThrow(new RuntimeException("Equipo no encontrado"));
 
         mockMvc.perform(get("/api/v1/equipos/1"))

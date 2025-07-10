@@ -5,41 +5,38 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.example.usuarios.model.Rol;
-import com.example.usuarios.model.usuario;
 import com.example.usuarios.repository.RoleRepository;
-import com.example.usuarios.repository.UsuarioRepository;
+import com.example.usuarios.service.UsuarioService;
 
 @Configuration
 public class LoadDatabase {
 
     @Bean
-    CommandLineRunner initDatabase(RoleRepository roleRepo, UsuarioRepository userRepo) {
+    CommandLineRunner initDatabase(RoleRepository roleRepo, UsuarioService usuarioService) {
         return args -> {
-
-            if (roleRepo.count() == 0 && userRepo.count() == 0) {
-                // Insertar roles
+            if (roleRepo.count() == 0) {
+                // Crear roles
                 Rol admin = new Rol();
-                admin.setNombre("Administrador");
+                admin.setNombre("ADMIN");
                 roleRepo.save(admin);
 
                 Rol user = new Rol();
-                user.setNombre("Usuario");
+                user.setNombre("USER");
                 roleRepo.save(user);
+            }
 
-                // Insertar usuarios
-                usuario u1 = new usuario();
-                u1.setUsername("admin");
-                u1.setPassword("admin123"); 
-                u1.setCorreo("admin@example.com");
-                u1.setRol(admin);
-                userRepo.save(u1);
+            if (usuarioService.buscarUsuarios().isEmpty()) {
+                // Obtener IDs de roles
+                Long adminRoleId = roleRepo.findByNombre("ADMIN")
+                        .orElseThrow(() -> new RuntimeException("Rol ADMIN no encontrado"))
+                        .getId();
+                Long userRoleId = roleRepo.findByNombre("USER")
+                        .orElseThrow(() -> new RuntimeException("Rol USER no encontrado"))
+                        .getId();
 
-                usuario u2 = new usuario();
-                u2.setUsername("juan");
-                u2.setPassword("juan123");
-                u2.setCorreo("juan@example.com");
-                u2.setRol(user);
-                userRepo.save(u2);
+                // Crear usuarios usando el servicio para que se maneje todo (contraseña cifrada, validaciones, etc)
+                usuarioService.crearUsuario("admin", "admin123", "admin@example.com", adminRoleId);
+                usuarioService.crearUsuario("juan", "juan123", "juan@example.com", userRoleId);
             }
         };
     }

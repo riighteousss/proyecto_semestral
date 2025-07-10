@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PostMapping;
 
 
@@ -52,34 +53,51 @@ public class EquipoController {
         }
         return ResponseEntity.ok(Equipo);
     }
-
-    // endpoint para agregar un equipo
-    @Operation(summary = "Agregar/registrar un nuevo equipo", description = "registra un nuevo equipo asociado a un usuario")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Equipo creado correctamente",
-            content = @Content(schema = @Schema(implementation = equipo.class))),
-        @ApiResponse(responseCode = "404", description = "Usuario no encontrado, no se puede agregar el equipo")
-    })
-    @PostMapping("/equipos")
-    public ResponseEntity<?> agregarequipo(@RequestBody equipo newequipo) {
-        try {
+    //agregar un equipo nuevo
+    @Operation(
+    summary = "Agregar/registrar un nuevo equipo",
+    description = "Registra un nuevo equipo asociado a un usuario existente. Requiere autenticación mediante token JWT en el encabezado Authorization."
+)
+@ApiResponses(value = {
+    @ApiResponse(
+        responseCode = "201",
+        description = "Equipo creado correctamente",
+        content = @Content(schema = @Schema(implementation = equipo.class))
+    ),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Usuario no encontrado, no se puede agregar el equipo"
+    ),
+  
+})
+   @PostMapping("/equipos")
+public ResponseEntity<?> agregarequipo(
+    @RequestBody equipo newequipo, 
+    @RequestHeader("Authorization") String authHeader
+) {
+    try {
+        
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
 
         equipo equipoagregado = equiposervice.agregarequipo(
             newequipo.getIdusuario(), 
             newequipo.getTipodispositivo(),
             newequipo.getMarca(),
-            newequipo.getModelo()
-            );
+            newequipo.getModelo(),
+            token
+        );
 
-            equipoagregado.add(linkTo(methodOn(EquipoController.class).obtenerequiporid(equipoagregado.getId())).withRel("buscar equipo por id"));
-            equipoagregado.add(linkTo(methodOn(EquipoController.class).eliminarquipoporid(equipoagregado.getId())).withRel("eliminar equipo por id"));
-            equipoagregado.add(linkTo(methodOn(EquipoController.class).buscarequiposdeusuarioporid(equipoagregado.getIdusuario())).withRel("buscar todos por id usuario"));
+        
+        equipoagregado.add(linkTo(methodOn(EquipoController.class).obtenerequiporid(equipoagregado.getId())).withRel("buscar equipo por id"));
+        equipoagregado.add(linkTo(methodOn(EquipoController.class).eliminarquipoporid(equipoagregado.getId())).withRel("eliminar equipo por id"));
+        equipoagregado.add(linkTo(methodOn(EquipoController.class).buscarequiposdeusuarioporid(equipoagregado.getIdusuario())).withRel("buscar todos por id usuario"));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(equipoagregado);
-    }   catch (RuntimeException e) {
+
+    } catch (RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
-    }
+}
 
      // endpoint para eliminar un equipo
     @Operation(summary = "Eliminar un equipo", description = "Elimina un equipo registrado segun su ID")
